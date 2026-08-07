@@ -41,12 +41,15 @@ jobs:
             python3 scripts/update_prices.py
           fi
 
+      # 산출물 경로만 커밋 대상으로 본다. 무관한 파일 변경으로 Pages 재배포가 일어나
+      # 전 페이지 Last-Modified가 갱신되면 H4 신선도 대비가 오염된다.
       - name: Commit and push if changed
         run: |
-          if [[ -n "$(git status --porcelain)" ]]; then
+          TRACKED="price sitemap.xml scripts/sku-data.json data"
+          if [[ -n "$(git status --porcelain -- $TRACKED)" ]]; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add -A
+            git add -- $TRACKED
             git commit -m "chore: daily price update $(TZ=Asia/Seoul date +%Y-%m-%d)"
             git push
           else

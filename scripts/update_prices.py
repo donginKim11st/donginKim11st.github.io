@@ -313,6 +313,14 @@ def main():
         print("[dry-run] no files modified, no IndexNow ping")
         return 0
 
+    # 갱신 개시된 SKU가 하나도 없으면 완전 no-op으로 종료한다.
+    # 로그 1줄이라도 쓰면 커밋이 생기고, GitHub Pages 재배포가 전 페이지의
+    # Last-Modified 헤더를 갱신해 H4 신선도 대비를 오염시킨다.
+    # 대기 목록은 wave-assignment.json + 날짜로 결정적으로 재구성 가능하므로 정보 손실 없음.
+    if not results and not any(c["status"] == "failed" for c in changes):
+        print(f"[no-op] 갱신 개시 SKU 0개 ({len(waiting)} 대기) — 파일 미변경, 커밋 없음")
+        return 0
+
     updated_ids = []
     for sku, price, count in results:
         page = PRICE_DIR / f"{sku['id']}.html"
