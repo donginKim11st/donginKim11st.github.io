@@ -1,13 +1,24 @@
 name: daily-price-update
 
 on:
-  workflow_dispatch: {}
-  # Phase 2 (2026-08-19) 활성화 예정 — 아래 주석 해제 시 매일 KST 07:00 자동 실행
-  # schedule:
-  #   - cron: '0 22 * * *'
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: "계단식 게이트 해제 (H4 처치 오염 — 실험 종료 후 전용)"
+        type: boolean
+        default: false
+  # Phase 2 계단식 도입 — 2026-08-19 활성화. 개시 SKU는 scripts/wave-assignment.json 이 결정
+  #   Wave 1 (14 SKU, A7/B7): 2026-08-19 개시
+  #   Wave 2 (14 SKU, A7/B7): 2026-09-02 개시
+  schedule:
+    - cron: '0 22 * * *'   # 22:00 UTC = 07:00 KST
 
 permissions:
   contents: write
+
+concurrency:
+  group: daily-price-update
+  cancel-in-progress: false
 
 jobs:
   update:
@@ -19,8 +30,16 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Guard — 계단식 배정표 존재 확인
+        run: test -f scripts/wave-assignment.json
+
       - name: Run price update
-        run: python3 scripts/update_prices.py
+        run: |
+          if [[ "${{ inputs.force_all }}" == "true" ]]; then
+            python3 scripts/update_prices.py --force-all
+          else
+            python3 scripts/update_prices.py
+          fi
 
       - name: Commit and push if changed
         run: |

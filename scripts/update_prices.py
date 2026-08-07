@@ -8,6 +8,12 @@
 - JSON-LD lowPrice / offerCount / priceValidUntil 갱신.
 - sitemap.xml lastmod 갱신, data/update-log.jsonl append, IndexNow 핑.
 - --dry-run: 파일 수정·핑 없이 파싱 결과만 stdout 출력.
+
+H4 계단식 도입(stepped-wedge):
+  scripts/wave-assignment.json 의 update_start 이후인 SKU만 갱신한다.
+  Wave 1 = 2026-08-19 개시, Wave 2 = 2026-09-02 개시.
+  개시 전 SKU는 fetch조차 하지 않고 건너뛴다 (페이지·sitemap·IndexNow 전부 불변).
+  --force-all 로 게이트 해제, --as-of YYYY-MM-DD 로 기준일 override(검증용).
 """
 
 import argparse
@@ -22,6 +28,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKU_DATA = REPO_ROOT / "scripts" / "sku-data.json"
+WAVE_ASSIGN = REPO_ROOT / "scripts" / "wave-assignment.json"
 PRICE_DIR = REPO_ROOT / "price"
 SITEMAP = REPO_ROOT / "sitemap.xml"
 LOG_FILE = REPO_ROOT / "data" / "update-log.jsonl"
@@ -138,6 +145,22 @@ def collect(sku: dict):
     return got, None
 
 
+def load_wave_assignment() -> dict:
+    """SKU별 갱신 개시일 배정표. 파일이 없으면 빈 dict."""
+    if not WAVE_ASSIGN.exists():
+        return {}
+    data = json.loads(WAVE_ASSIGN.read_text(encoding="utf-8"))
+    return data.get("assignment", {})
+
+
+def wave_active(sid: str, assign: dict, today: datetime.date):
+    """(개시 여부, 배정 엔트리). 배정에 없는 SKU는 갱신하지 않는다 (안전 기본값)."""
+    ent = assign.get(sid)
+    if ent is None:
+        return False, None
+    return today >= datetime.date.fromisoformat(ent["update_start"]), ent
+
+
 KOR_DATE_RE = r"\d{4}년 \d{1,2}월 \d{1,2}일"
 
 
@@ -214,28 +237,53 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true",
                     help="파일 수정·핑 없이 파싱 결과만 출력")
+    ap.add_argument("--force-all", action="store_true",
+                    help="계단식 게이트 무시하고 전 SKU 갱신 (실험 종료 후 전용)")
+    ap.add_argument("--as-of", metavar="YYYY-MM-DD",
+                    help="게이트 판정 기준일 override (검증용)")
     args = ap.parse_args()
 
     now = datetime.datetime.now(KST)
+    today = (datetime.date.fromisoformat(args.as_of) if args.as_of else now.date())
     skus = json.loads(SKU_DATA.read_text(encoding="utf-8"))
+    assign = load_wave_assignment()
+    if not assign and not args.force_all:
+        print("[abort] scripts/wave-assignment.json 없음 — 계단식 배정 없이는 갱신하지 않는다.",
+              file=sys.stderr)
+        return 1
+    if args.force_all:
+        print("[warn] --force-all: 계단식 게이트 해제됨 (H4 처치 오염 주의)", file=sys.stderr)
 
     results = []      # (sku, matched_name, new_price, new_count) or fail
     changes = []      # 로그용
-    ok, fail = 0, 0
+    waiting = []      # 개시 전 SKU (대조군)
+    ok, fail, fetched = 0, 0, 0
 
-    for i, sku in enumerate(skus):
+    for sku in skus:
         sid = sku["id"]
         page = PRICE_DIR / f"{sid}.html"
         if not page.exists():
             print(f"[skip] {sid}: no price page")
             continue
-        if i > 0:
+        active, ent = wave_active(sid, assign, today)
+        if not (active or args.force_all):
+            w = ent["wave"] if ent else "-"
+            st = ent["update_start"] if ent else "-"
+            print(f"[wait] {sid}: wave {w}, starts {st}")
+            waiting.append({"id": sid, "wave": ent["wave"] if ent else None,
+                            "arm": ent["arm"] if ent else None,
+                            "update_start": st})
+            continue
+        if fetched > 0:
             time.sleep(FETCH_SLEEP_SEC)
+        fetched += 1
         got, err = collect(sku)
         if got is None:
             fail += 1
             print(f"[fail] {sid}: {err} (기존 값 유지: {sku.get('lowest_price')})")
             changes.append({"id": sid, "status": "failed", "error": err,
+                            "wave": ent["wave"] if ent else None,
+                            "arm": ent["arm"] if ent else None,
                             "kept_price": sku.get("lowest_price"),
                             "kept_seller_count": sku.get("seller_count")})
             if not args.dry_run:
@@ -247,6 +295,8 @@ def main():
         print(f"[ok]   {sid}: {old_p} -> {price} / sellers {old_c} -> {count}"
               f"  (matched: {matched_name})")
         changes.append({"id": sid, "status": "ok",
+                        "wave": ent["wave"] if ent else None,
+                        "arm": ent["arm"] if ent else None,
                         "old_price": old_p, "new_price": price,
                         "old_seller_count": old_c, "new_seller_count": count})
         results.append((sku, price, count))
@@ -256,11 +306,12 @@ def main():
             sku["collected_at"] = now.isoformat(timespec="minutes")
             sku["status"] = "ok"
 
-    print(f"\nparsed {ok} ok / {fail} failed / {ok + fail} attempted")
+    print(f"\nparsed {ok} ok / {fail} failed / {ok + fail} attempted"
+          f" / {len(waiting)} waiting (wave not started)")
 
     if args.dry_run:
         print("[dry-run] no files modified, no IndexNow ping")
-        return
+        return 0
 
     updated_ids = []
     for sku, price, count in results:
@@ -282,15 +333,21 @@ def main():
         f.write(json.dumps({
             "date": now.strftime("%Y-%m-%d"),
             "ts": now.isoformat(timespec="seconds"),
+            "gate_date": today.isoformat(),
+            "force_all": bool(args.force_all),
+            "active_waves": sorted({c["wave"] for c in changes
+                                    if c.get("wave") is not None}),
             "updated": [c for c in changes if c["status"] == "ok"],
             "failed": [c for c in changes if c["status"] == "failed"],
+            "waiting": waiting,
         }, ensure_ascii=False) + "\n")
 
     if updated_ids:
         status = ping_indexnow(updated_ids)
         print(f"IndexNow ping: {len(updated_ids)} urls, status={status}")
     print(f"updated pages: {len(updated_ids)}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)

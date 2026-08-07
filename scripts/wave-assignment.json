@@ -1,0 +1,183 @@
+{
+  "_meta": {
+    "purpose": "H4 stepped-wedge — 일일 갱신 처치의 계단식 도입 배정",
+    "randomization": "arm 내 seller_count 오름차순 인접쌍 블록 무작위",
+    "seed": 20260807,
+    "generated": "2026-08-07",
+    "wave_start_kst": {
+      "1": "2026-08-19",
+      "2": "2026-09-02"
+    },
+    "note": "arm은 H3 제목 처치(A=쿼리형, B=일반형). wave는 H4 갱신 처치. 두 요인 직교."
+  },
+  "assignment": {
+    "1more-sonoflow": {
+      "arm": "A",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 1
+    },
+    "airpods-4": {
+      "arm": "B",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 121
+    },
+    "airpods-pro-3": {
+      "arm": "A",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 154
+    },
+    "anker-soundcore-p40i": {
+      "arm": "B",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 5
+    },
+    "anker-soundcore-space-a40": {
+      "arm": "A",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 5
+    },
+    "bo-beoplay-ex": {
+      "arm": "B",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 15
+    },
+    "bose-qc-earbuds-2": {
+      "arm": "A",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 28
+    },
+    "britz-acoustic-tws7": {
+      "arm": "B",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 14
+    },
+    "cmf-buds-pro-2": {
+      "arm": "A",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 9
+    },
+    "denon-perl-pro": {
+      "arm": "B",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 6
+    },
+    "final-ze3000": {
+      "arm": "A",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 2
+    },
+    "galaxy-buds-fe": {
+      "arm": "B",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 57
+    },
+    "galaxy-buds2-pro": {
+      "arm": "A",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 43
+    },
+    "galaxy-buds3": {
+      "arm": "B",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 145
+    },
+    "galaxy-buds3-pro": {
+      "arm": "A",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 151
+    },
+    "iriver-itw-g9": {
+      "arm": "B",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 43
+    },
+    "jbl-tour-pro-3": {
+      "arm": "A",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 128
+    },
+    "jbl-wave-buds-2": {
+      "arm": "B",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 38
+    },
+    "marshall-minor-4": {
+      "arm": "A",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 39
+    },
+    "nothing-ear-a": {
+      "arm": "B",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 10
+    },
+    "qcy-melobuds-pro-ht08": {
+      "arm": "A",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 20
+    },
+    "qcy-t13": {
+      "arm": "B",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 103
+    },
+    "redmi-buds-5-pro": {
+      "arm": "A",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 19
+    },
+    "redmi-buds-6": {
+      "arm": "B",
+      "wave": 2,
+      "update_start": "2026-09-02",
+      "seller_count_baseline": 1
+    },
+    "sennheiser-momentum-tw4": {
+      "arm": "A",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 16
+    },
+    "sony-wf-1000xm5": {
+      "arm": "B",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 101
+    },
+    "sony-wf-c710n": {
+      "arm": "A",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 71
+    },
+    "technics-eah-az80": {
+      "arm": "B",
+      "wave": 1,
+      "update_start": "2026-08-19",
+      "seller_count_baseline": 15
+    }
+  }
+}
